@@ -14,21 +14,48 @@ then
   SYMBOL_RESULT=$($PSQL "SELECT symbol FROM elements WHERE symbol = '$1'")
   NAME_RESULT=$($PSQL "SELECT name FROM elements WHERE name = '$1'")
 
-  #check if argument is an atomic number in DB
+  #check if argument is an existing atomic number in DB
   if [[ ! -z $ATOMIC_NUMBER_RESULT ]]
   then
     #get and return information using atomic number
-    echo "atomic number: $ATOMIC_NUMBER_RESULT"
+    DB_DATA=$($PSQL "SELECT (properties.atomic_number, name, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius) 
+    FROM properties 
+    FULL JOIN elements ON properties.atomic_number = elements.atomic_number 
+    FULL JOIN types ON properties.type_id = types.type_id
+    WHERE properties.atomic_number =$1")
+    #the $ gets the value pasted on so we need an extra set of () directly after the = here otherwise it will not be defined as an array but rather a single string.
+    RAY=($(echo $DB_DATA | sed 's/,/ /g' | sed 's/(//g' | sed 's/)//g'))
+    #replace , with spaces and remove all parenthesis.
+    echo "The element with atomic number ${RAY[0]} is ${RAY[1]} (${RAY[2]}). It's a ${RAY[3]}, with a mass of ${RAY[4]} amu. ${RAY[1]} has a melting point of ${RAY[5]} celsius and a boiling point of ${RAY[6]} celsius."
+
   #check if argument is a symbol in DB
   elif [[ ! -z $SYMBOL_RESULT ]]
     then
     #get and return information using symbol
-    echo "symbol: $SYMBOL_RESULT"
+    DB_DATA=$($PSQL "SELECT (properties.atomic_number, name, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius) 
+    FROM properties 
+    FULL JOIN elements ON properties.atomic_number = elements.atomic_number 
+    FULL JOIN types ON properties.type_id = types.type_id
+    WHERE symbol ='$1'")
+    #see explanation above
+    RAY=($(echo $DB_DATA | sed 's/,/ /g' | sed 's/(//g' | sed 's/)//g'))
+    #replace , with spaces and remove all parenthesis.
+    echo "The element with atomic number ${RAY[0]} is ${RAY[1]} (${RAY[2]}). It's a ${RAY[3]}, with a mass of ${RAY[4]} amu. ${RAY[1]} has a melting point of ${RAY[5]} celsius and a boiling point of ${RAY[6]} celsius."
+
   #check if argument is a name in DB
   elif [[ ! -z $NAME_RESULT ]]
     then
     #get and return information using name
-    echo "name: $NAME_RESULT"
+    DB_DATA=$($PSQL "SELECT (properties.atomic_number, name, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius) 
+    FROM properties 
+    FULL JOIN elements ON properties.atomic_number = elements.atomic_number 
+    FULL JOIN types ON properties.type_id = types.type_id
+    WHERE name ='$1'")
+    #see explanation above
+    RAY=($(echo $DB_DATA | sed 's/,/ /g' | sed 's/(//g' | sed 's/)//g'))
+    #replace , with spaces and remove all parenthesis.
+    echo "The element with atomic number ${RAY[0]} is ${RAY[1]} (${RAY[2]}). It's a ${RAY[3]}, with a mass of ${RAY[4]} amu. ${RAY[1]} has a melting point of ${RAY[5]} celsius and a boiling point of ${RAY[6]} celsius."
+
   else
     echo "I could not find that element in the database."
   fi
